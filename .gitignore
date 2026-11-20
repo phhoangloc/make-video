@@ -1,0 +1,11 @@
+# video projects (scripts, audio, clips, Resolve files) stay local
+scripts/
+
+# local Claude Code settings
+.claude/settings.local.json
+
+# Python / OS clutter
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
