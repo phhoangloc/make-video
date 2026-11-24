@@ -188,7 +188,6 @@ MAP_PAPER = np.array([236, 224, 196], np.float32)
 MAP_INK = (38, 32, 28)
 MAP_VERMILION = (172, 44, 34)
 MAP_INDIGO = (38, 66, 104)
-FONT_MAP = str(ROOT.parents[1] / "image-source" / "fonts" / "DancingScript.ttf")   # calligraphic, full Vietnamese
 
 
 def _blur(a, sigma):
@@ -328,12 +327,8 @@ def _map_color(color):
 
 def label(canvas, xy, text, size=40, color=(250, 238, 210), anchor="ls", font=None):
     if canvas.info.get("map"):
-        # on a paper map: calligraphic ink lettering with a thin paper halo (readable, no drop shadow)
-        f = ImageFont.truetype(FONT_MAP, int(max(size, 36) * 1.2))   # never too small to read
-        try:
-            f.set_variation_by_axes([700])
-        except Exception:
-            pass
+        # on a paper map: same font as the rest of the video, in ink colours with a thin paper halo
+        f = ImageFont.truetype(font or FONT_UI, int(max(size, 32)))   # never too small to read
         c = _map_color(color)
         halo = tuple(int(v) for v in MAP_PAPER) + (int(c[3] * 0.9),)
         ImageDraw.Draw(canvas).text(xy, text, font=f, fill=c, anchor=anchor,

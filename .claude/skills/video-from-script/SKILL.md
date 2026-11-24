@@ -1,6 +1,6 @@
 ---
 name: "video-from-script"
-description: "Turn a saved script in the scripts/ folder (by its title) into a video in the user's house style (contemporary Vietnamese folk-art images, hand-painted ink-wash maps with calligraphic lettering, 8 fps stepped animation, Edge TTS narration with exact pauses, original orchestral music bed, subtitles): reuse images from image-source/ or generate them with Figma AI, and package it as a DaVinci Resolve timeline script (review, edit and export in Resolve)."
+description: "Turn a saved script in the scripts/ folder (by its title) into a video in the user's house style (contemporary Vietnamese folk-art images, hand-painted ink-wash maps, 8 fps stepped animation, Edge TTS narration with exact pauses, original orchestral music bed, subtitles): reuse images from image-source/ or generate them with Figma AI, and package it as a DaVinci Resolve timeline script (review, edit and export in Resolve)."
 ---
 
 # Video From Script
@@ -21,7 +21,7 @@ The user approved this look and sound on `scripts/the-same-river-trap-worked-twi
 | Picture | 1920×1080, **8 fps** stepped 2D animation (Resolve timeline 24 fps, each frame held 3×) |
 | Images | **Contemporary Vietnamese folk art** (modern Đông Hồ / Hàng Trống), generated with Figma AI; prompt paragraph in Step 2 |
 | Maps | **Hand-painted ink-wash (thủy mặc)** maps drawn in code from Natural Earth data, `folk_style.map_frame()` (Step 5) |
-| Map text | **Dancing Script Bold** (`image-source/fonts/DancingScript.ttf`, OFL, full Vietnamese), ink / vermilion / indigo with a paper halo |
+| Map text | Same font as the rest of the video (Arial Bold), in ink / vermilion / indigo with a thin paper halo. Don't change the font |
 | Other text | Lower thirds, captions and titles over pictures: Arial Bold, cream on dark; big years and numbers: Georgia Bold |
 | Portraits | Chest-up 4:5 folk portrait on a plain flat backdrop colour per character, shown as tilted cream "cards" with name + year |
 | Voice (English) | `en-US-ChristopherNeural`, rate `-10%`, pitch `-10Hz`; emphasised phrases `-14Hz` / `+25%` volume; exact pauses + first-noun stress (Step 4) |
@@ -49,7 +49,6 @@ image-source/            # shared, reusable library
 ├── characters/          # <id>-folk.png = folk-art portraits
 ├── backgrounds/         # <id>-folk.png = folk-art backgrounds
 ├── props/               # transparent sprites (ships, boats…)
-├── fonts/               # DancingScript.ttf (map lettering) + licence
 └── data/                # Natural Earth geojson (land 50m/10m, rivers 10m, admin0 50m)
 .claude/skills/video-from-script/folk_style.py   # ink-wash maps, map lettering, prop cut-out
 ```
@@ -146,7 +145,7 @@ Defaults (override with the user's extra requirements): 1920×1080 for YouTube, 
 - `fs.configure(W, H, project_root)`, then `img, pr = fs.map_frame(fs.load_polys("ne_10m_land.geojson"), fs.load_rivers({"Hong", "Da"}), lon, lat, width_deg)`. Use `ne_50m_land` for wide views (more than ~20° across). Redraw every frame for zooms; cache static maps.
 - Ink-painting mountains are drawn by default in north Vietnam / south China (`mountain_box`), with the Red River delta kept open (`mountain_skip`). Set `mountain_box` for other regions, or `None` for no mountains.
 - Territories (an empire's extent): `fs.region_wash(img, pr, rings)`, a light vermilion wash with a thin outline, never solid fill.
-- All text on a map goes through `fs.map_label(...)`: role `"ink"` for places and captions, `"accent"` (vermilion) for the key place and enemy places, `"sea"` (indigo) for seas and rivers. The minimum size is 36 px so small notes stay readable. Routes and arrows: vermilion lines; location pins: small vermilion circles.
+- All text on a map goes through `fs.map_label(...)`: role `"ink"` for places and captions, `"accent"` (vermilion) for the key place and enemy places, `"sea"` (indigo) for seas and rivers. The font stays Arial Bold; the minimum size is 32 px so small notes stay readable. Routes and arrows: vermilion lines; location pins: small vermilion circles.
 - In the reference `build_video.py`, `label()` switches to this style by itself when the canvas has `info["map"]`. `camera()` and `caption()` pass that tag on.
 
 **Text over pictures**: lower thirds (dark bar, orange accent, Arial Bold cream), captions and `big_text` in Arial Bold cream with a soft shadow, big years in Georgia Bold. Darken the picture (about 0.45–0.6) behind full-screen text.

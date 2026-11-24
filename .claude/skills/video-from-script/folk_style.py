@@ -16,8 +16,8 @@ Import from a video's build_video.py:
 Map look: cream dó paper with fibres, uneven ochre land wash with ink bleeding inside the coast,
 pale indigo wash along the shore, dry-brush ink coastline, indigo rivers, sparse ink-painting
 mountains on uplands (they fade in while zooming). Everything is drawn from Natural Earth data,
-so zooms stay smooth and coastlines stay accurate. Text on maps: Dancing Script Bold (calligraphic,
-full Vietnamese) in ink / vermilion / indigo with a thin paper halo.
+so zooms stay smooth and coastlines stay accurate. Text on maps: the video's normal font (Arial Bold)
+in ink / vermilion / indigo with a thin paper halo.
 """
 import json, math
 from pathlib import Path
@@ -39,8 +39,7 @@ def configure(width, height, project_root):
     _cache.clear()
 
 
-def font_path():
-    return str(PROJECT / "image-source" / "fonts" / "DancingScript.ttf")
+FONT = "C:/Windows/Fonts/arialbd.ttf"   # same font as the rest of the video (has Vietnamese diacritics)
 
 
 def data_path(name):
@@ -211,17 +210,12 @@ def region_wash(img, pr, polys, color=VERMILION, alpha=85):
 
 
 # ------------------------------------------------------------------ text on maps
-def map_font(size):
-    f = ImageFont.truetype(font_path(), int(max(size, 36) * 1.2))   # never too small to read
-    try:
-        f.set_variation_by_axes([700])                               # bold
-    except Exception:
-        pass
-    return f
+def map_font(size, font=None):
+    return ImageFont.truetype(font or FONT, int(max(size, 32)))     # never too small to read
 
 
 def map_label(canvas, xy, text, size=40, role="ink", anchor="ls", alpha=255):
-    """Calligraphic map lettering. role: "ink" (places, captions), "accent" (vermilion: the key place,
+    """Map lettering in ink colours. role: "ink" (places, captions), "accent" (vermilion: the key place,
     enemies), "sea" (indigo: seas, rivers)."""
     c = {"ink": INK, "accent": VERMILION, "sea": INDIGO}[role] + (alpha,)
     halo = tuple(int(v) for v in PAPER) + (int(alpha * 0.9),)
