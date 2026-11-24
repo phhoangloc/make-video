@@ -9,3 +9,6 @@ __pycache__/
 *.pyc
 .DS_Store
 Thumbs.db
+
+# shared image library and map data stay local
+image-source/
