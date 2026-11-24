@@ -114,6 +114,17 @@ local function main()
   tl:SetTrackName("video", 1, "Scenes")
   tl:SetTrackName("audio", 1, "Narration")
 
+  -- Subtitles go on FIRST, while the timeline is still empty: Resolve ignores recordFrame
+  -- for SRT items and appends them after everything already on the timeline, so adding
+  -- them last would push every caption past the final scene. Always in the media pool;
+  -- on the timeline only if requested.
+  if srt_item and M.burn_subtitles then
+    tl:AddTrack("subtitle")
+    local s = first(mp:AppendToTimeline({ { mediaPoolItem = srt_item, recordFrame = start } }))
+    say("subtitles on timeline", s ~= nil)
+    if not s then say("Drag subtitles.srt from the Media Pool onto the timeline to add captions.") end
+  end
+
   local video_items, rec = {}, start
   for _, sc in ipairs(scenes) do
     local s = sc.s
@@ -155,13 +166,7 @@ local function main()
     say("music", m ~= nil)
   end
 
-  -- 6. subtitles: always in the media pool, on the timeline only if requested
-  if srt_item and M.burn_subtitles then
-    tl:AddTrack("subtitle")
-    local s = first(mp:AppendToTimeline({ { mediaPoolItem = srt_item, trackIndex = 1, recordFrame = start } }))
-    say("subtitles on timeline", s ~= nil)
-    if not s then say("Drag subtitles.srt from the Media Pool onto the timeline to add captions.") end
-  end
+  -- 6. subtitles: placed in step 3, right after the timeline was created (see there)
 
   -- 7. preset the Deliver page (no render is queued)
   pcall(function()

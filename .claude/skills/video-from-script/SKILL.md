@@ -1,6 +1,6 @@
 ---
 name: "video-from-script"
-description: "Turn a saved script in the scripts/ folder (by its title) into a video: analyze characters, reuse images from image-source/ or generate 2D art with Figma AI, voice it with Edge TTS, and package it as a DaVinci Resolve timeline script (review, edit and export in Resolve)."
+description: "Turn a saved script in the scripts/ folder (by its title) into a video in the user's house style (contemporary Vietnamese folk-art images, hand-painted ink-wash maps with calligraphic lettering, 8 fps stepped animation, Edge TTS narration with exact pauses, original orchestral music bed, subtitles): reuse images from image-source/ or generate them with Figma AI, and package it as a DaVinci Resolve timeline script (review, edit and export in Resolve)."
 ---
 
 # Video From Script
@@ -11,6 +11,23 @@ Usage: `/video-from-script <script-title> [extra requirements]`
 - Everything after the title is the user's **extra requirements** for the video (length, aspect ratio, voice, pacing, subtitles, music, mood…). They override every default below.
 
 All paths are relative to the root of the current project.
+
+## House style (user defaults)
+
+The user approved this look and sound on `scripts/the-same-river-trap-worked-twice-350-years-apart/` (2026-11-24). Use it for every new video unless the extra requirements say otherwise. That folder is the **reference implementation**: copy from its `tts_scene.py`, `build_video.py` and `make_music.py` rather than starting from scratch. `scripts/` is not in git, so copies of those files (and its `plan.md`) are kept in `reference/` next to this SKILL.md. Use them when the folder is missing.
+
+| Area | Default |
+|---|---|
+| Picture | 1920×1080, **8 fps** stepped 2D animation (Resolve timeline 24 fps, each frame held 3×) |
+| Images | **Contemporary Vietnamese folk art** (modern Đông Hồ / Hàng Trống), generated with Figma AI; prompt paragraph in Step 2 |
+| Maps | **Hand-painted ink-wash (thủy mặc)** maps drawn in code from Natural Earth data, `folk_style.map_frame()` (Step 5) |
+| Map text | **Dancing Script Bold** (`image-source/fonts/DancingScript.ttf`, OFL, full Vietnamese), ink / vermilion / indigo with a paper halo |
+| Other text | Lower thirds, captions and titles over pictures: Arial Bold, cream on dark; big years and numbers: Georgia Bold |
+| Portraits | Chest-up 4:5 folk portrait on a plain flat backdrop colour per character, shown as tilted cream "cards" with name + year |
+| Voice (English) | `en-US-ChristopherNeural`, rate `-10%`, pitch `-10Hz`; emphasised phrases `-14Hz` / `+25%` volume; exact pauses + first-noun stress (Step 4) |
+| Music | Original orchestral bed synthesized in code (`make_music.py`), as long as the timeline, baked to about **-30 LUFS** and placed at `--music-db 0` (Step 6) |
+| Subtitles | **On the timeline** (`--subtitles`), for YouTube too |
+| Ending | Question for the comments + short sign-off. **No next-video teaser and no "subscribe"** unless the user asks |
 
 ## Folder layout
 
@@ -28,9 +45,13 @@ scripts/<script-title>/
 │   ├── build_timeline.lua # run inside DaVinci Resolve
 │   └── build_log.txt      # written by that script on each run
 └── output/              # Resolve's Deliver page is preset to export here
-image-source/            # shared, reusable image library
-├── characters/
-└── backgrounds/
+image-source/            # shared, reusable library
+├── characters/          # <id>-folk.png = folk-art portraits
+├── backgrounds/         # <id>-folk.png = folk-art backgrounds
+├── props/               # transparent sprites (ships, boats…)
+├── fonts/               # DancingScript.ttf (map lettering) + licence
+└── data/                # Natural Earth geojson (land 50m/10m, rivers 10m, admin0 50m)
+.claude/skills/video-from-script/folk_style.py   # ink-wash maps, map lettering, prop cut-out
 ```
 
 ## Step 0 — Check prerequisites
@@ -56,7 +77,10 @@ Also note the platform/length from the header (YouTube 16:9 or Shorts/TikTok 9:1
 
 Write `scripts/<script-title>/plan.md` with:
 
-1. **Visual style** (one paragraph used in every image prompt): simple flat 2D illustration, clean shapes, limited color palette, no text in the image. Adjust only if the user's extra requirements ask for a different style.
+1. **Visual style** (one paragraph used, word for word, in every image prompt). Default (house style):
+   > Contemporary Vietnamese folk art illustration, a modern reinterpretation of Đông Hồ woodblock prints and Hàng Trống paintings: flat bold shapes, thick confident black outlines, hand-printed texture on cream dó paper with visible fibres, limited palette of vermilion red, turmeric yellow, indigo blue, leaf green and earth brown, decorative stylised patterns for water waves and clouds, slightly naive perspective, graphic and elegant, no gradient shading. No text, no letters, no signature.
+
+   Use a different style only if the user's extra requirements ask for one.
 2. **Characters**: for each one — `id` (kebab-case), name, role in the story, age/build, face & hair, outfit, signature colors, personality, and the expressions/poses the script needs.
 3. **Backgrounds**: for each location — `id`, description, time of day, mood.
 4. **Scene list**: one row per script section — scene number, section title, background id, character ids + pose, narration text, on-screen text, and camera move (slow zoom in / pan left / static…).
@@ -69,10 +93,11 @@ For each character and background in `plan.md`:
 
 1. **Look in `image-source/`** (`characters/`, `backgrounds/`, and any other subfolders). Match by file name first, then open likely candidates to check visually that they fit the description and style. If one fits, copy it into `assets/images/` and mark it `reused` in `plan.md`.
 2. **If nothing fits, generate with Figma AI** through the Figma MCP tools (read each tool's description for exact parameters; typically `create_new_file` for a working file, `generate_image` or `generate_vector_illustration` for the art, and `download_assets` / `get_screenshot` to export it).
-   - Prompt = visual style paragraph + the character/background description + pose/expression.
-   - Characters: full body, plain or transparent background, facing the camera at 3/4 angle, one image per needed pose/expression.
-   - Backgrounds: wide scene with empty space where characters will stand; 16:9 or 9:16 to match the video.
-3. Save each new image to **both** `assets/images/` and the shared library (`image-source/characters/<id>-<pose>.png` or `image-source/backgrounds/<id>.png`) so future videos can reuse it.
+   - Prompt = visual style paragraph + the character/background description + pose/expression. The default model (`gpt-image-2.5-flare`) returns 1536×864 for 16:9; scale it to the frame when loading. Each call uses Figma AI credits, so generate each image once and independent images in parallel.
+   - Portraits (house style): chest-up, facing 3/4 toward the viewer, centred, **plain flat backdrop** in the character's signature colour, 1024×1280.
+   - Characters that are animated full-body, and props (ships, boats…): one isolated object seen exactly from the side, "on a completely plain flat pure white background (#FFFFFF), no water, no shadow, no paper texture in the background". Then cut it out with `folk_style.key_out_white(img)`. It flood-fills the white from the border and also clears enclosed white gaps (between sails and rigging, rowers' arms). Check the cut-out on a magenta background before using it.
+   - Backgrounds: say where the empty space is, because animation is composited on top. For example, "EMPTY river, no boats, horizon at the middle of the image, the whole lower half open water" for a river that ships will sail on, or "city only in the LEFT third, the right two-thirds open water". 16:9 or 9:16 to match the video.
+3. Save each new image to **both** `assets/images/` and the shared library (`image-source/characters/<id>-folk.png`, `image-source/backgrounds/<id>-folk.png`, `image-source/props/<id>-folk.png`) so future videos can reuse it.
 4. If Figma generation fails, retry once; if it still fails, tell the user which images are missing and ask whether to continue with placeholders.
 
 Show the user the character images (and a couple of backgrounds) before building the video when they are present, so they can request changes early.
@@ -80,8 +105,8 @@ Show the user the character images (and a couple of backgrounds) before building
 ## Step 4 — Narration with Edge TTS
 
 Pick a voice that matches the script language unless the user specified one:
+- English (house style): `en-US-ChristopherNeural`, `rate="-10%"`, `pitch="-10Hz"`. Phrases that carry the drama (a reveal, a punchline) use the stronger setting `pitch="-14Hz"`, `volume="+25%"`. Write Vietnamese names **without diacritics** in the TTS text ("Tran Hung Dao", "Bach Dang") so the English voice can say them; on screen they keep their diacritics.
 - Vietnamese: `vi-VN-HoaiMyNeural` (female) / `vi-VN-NamMinhNeural` (male)
-- English: `en-US-AriaNeural` / `en-US-GuyNeural`
 - Japanese: `ja-JP-NanamiNeural` / `ja-JP-KeitaNeural`
 
 (`edge-tts --list-voices` shows all.) Generate one file per scene, `assets/audio/scene-NN.mp3`, plus phrase timings `scene-NN.json` (`[{text, start, end}]`), from a small script `scripts/<title>/tts_scene.py` so single scenes can be re-voiced.
@@ -105,7 +130,7 @@ Apply the user's requested speed with the `rate` option (e.g. `+10%`, `-10%`).
 4. With ffmpeg, cut that piece into three parts: before the noun, the noun itself, and after it. The noun segment runs from its start to the start of the next word. Give the noun segment `volume=4dB` and `atempo=0.87`, which makes it about 15 % longer. Join the parts back with `acrossfade=d=0.012` to avoid clicks. Then trim the piece's silence and add its pause as above.
 5. When a scene is generated, print any marked word that could not be found, and fix those before rendering.
 
-Check the result: `ffmpeg -i scene-01.mp3 -af silencedetect=n=-40dB:d=0.06 -f null -` should list gaps of 0.25 s and 1.0 s. A working example is `scripts/how-dai-viet-beat-the-mongol-empire-three-times/tts_scene.py`. It was made before the lead-in was dropped, so set `LEAD = 0` when you copy it.
+Check the result: `ffmpeg -i scene-01.mp3 -af silencedetect=n=-40dB:d=0.06 -f null -` should list gaps of 0.25 s and 1.0 s. The reference example is `scripts/the-same-river-trap-worked-twice-350-years-apart/tts_scene.py`: voice, emphasis settings, pauses, stress and `LEAD = 0` are already set. Copy it and replace its `SCENES` table. Each entry is `(phrase, B or S)`, where `S` uses the stronger setting.
 
 **Scene start and end (user preference, default):** the narration starts **right away**, with no silent lead-in at the start of a scene, and each scene ends **2 s** after the last word (`apad` at the end). Keep the silence after the last word at about 2 s in total, counting the ~0.3 s padding added when rendering. Since the voice starts at 0 s, the first shot of each scene must already show something meaningful at frame 0, not a blank or fade-in that delays the picture.
 
@@ -115,7 +140,16 @@ Measure each file's duration with `ffprobe` (or `ffmpeg -i`): that duration (plu
 
 The skill does **not** export a finished video. It renders one animated clip per scene; joining, audio, transitions and the final export happen in DaVinci Resolve (Step 6).
 
-Defaults (override with the user's extra requirements): 1920×1080 for YouTube, 1080×1920 for Shorts/TikTok; 30 fps unless the user asks for another rate. All scenes must use the **same** frame rate.
+Defaults (override with the user's extra requirements): 1920×1080 for YouTube, 1080×1920 for Shorts/TikTok; **8 fps** (house style: stepped, hand-made motion). All scenes must use the **same** frame rate.
+
+**Maps (house style): hand-painted ink-wash, drawn in code.** Don't generate maps as images: draw them from the Natural Earth data in `image-source/data/` with `folk_style.py` (next to this SKILL.md, see its docstring). That keeps zooms smooth and coastlines accurate:
+- `fs.configure(W, H, project_root)`, then `img, pr = fs.map_frame(fs.load_polys("ne_10m_land.geojson"), fs.load_rivers({"Hong", "Da"}), lon, lat, width_deg)`. Use `ne_50m_land` for wide views (more than ~20° across). Redraw every frame for zooms; cache static maps.
+- Ink-painting mountains are drawn by default in north Vietnam / south China (`mountain_box`), with the Red River delta kept open (`mountain_skip`). Set `mountain_box` for other regions, or `None` for no mountains.
+- Territories (an empire's extent): `fs.region_wash(img, pr, rings)`, a light vermilion wash with a thin outline, never solid fill.
+- All text on a map goes through `fs.map_label(...)`: role `"ink"` for places and captions, `"accent"` (vermilion) for the key place and enemy places, `"sea"` (indigo) for seas and rivers. The minimum size is 36 px so small notes stay readable. Routes and arrows: vermilion lines; location pins: small vermilion circles.
+- In the reference `build_video.py`, `label()` switches to this style by itself when the canvas has `info["map"]`. `camera()` and `caption()` pass that tag on.
+
+**Text over pictures**: lower thirds (dark bar, orange accent, Arial Bold cream), captions and `big_text` in Arial Bold cream with a soft shadow, big years in Georgia Bold. Darken the picture (about 0.45–0.6) behind full-screen text.
 
 For each scene:
 1. Composite the background with the character image(s) on top (bottom-aligned, positioned per `plan.md`).
@@ -134,8 +168,12 @@ Run the helper from the project root:
 python .claude/skills/video-from-script/make_resolve_project.py scripts/<script-title> [--subtitles] [--music path/to/music.mp3] [--transition 0.4]
 ```
 
-- `--subtitles`: put captions on the timeline (default: on for Shorts, off for YouTube). `subtitles.srt` is always imported into the Media Pool.
-- `--music`: only if the user provides a file or asks for music; it goes on A2 at -20 dB (`--music-db -14` for a louder bed, e.g. driving game music).
+- `--subtitles`: put captions on the timeline (house style: **always on**, YouTube included). `subtitles.srt` is always imported into the Media Pool.
+- `--music`: house style is an original orchestral bed:
+  1. Copy `make_music.py` from the reference video. It synthesizes strings, low strings, a horn motif and timpani in D minor, with intensity following the story. Adapt its `intensity()` curve and scene count to the new script.
+  2. Run it **after all narration is final**. Its length is the sum of the scene clips, so re-run it whenever a scene's narration changes length. Otherwise the music is cut before its fade-out.
+  3. It writes `music-orchestral.wav` at -16 LUFS. Bake the level into a copy (`ffmpeg -af volume=0.2` → `music-orchestral-20pct.wav`, about -30 LUFS), check it with `ebur128`, and pass `--music <that file> --music-db 0`. Resolve's volume property can be ignored, so bake the level into the file.
+  4. If the user gives a level, use it instead (percent → `volume=<p>`).
 - `--transition 0`: hard cuts instead of cross-dissolves.
 
 Resolve timelines only run at standard rates (16, 24, 25, 30, …). Clips at a rate Resolve doesn't offer, such as 8 fps, are placed on the first standard multiple (8 fps → 24 fps timeline): each frame is held 3×, so the 8 fps look and the timing are unchanged.
@@ -164,7 +202,8 @@ Resolve can't change a project's frame rate once the project has a timeline. If 
 ## Step 7 — Check and report
 
 1. Check every scene clip: same frame rate and resolution, length = narration + padding (`ffmpeg -i`).
-2. Extract 3–4 frames per scene (start, middle, end) and look at them: characters visible, nothing cut off, text readable.
+2. Extract 3–4 frames per scene (start, middle, end) and look at them: characters visible, nothing cut off, text readable. Include every map shot: no label hidden under mountains or other labels.
+   - Check that the music file is as long as the timeline (the sum of the clip lengths) and is at about -30 LUFS.
 3. Confirm the helper printed both paths (written + installed). If `lupa` is available (`pip install lupa`), load the Lua file once to catch syntax errors.
 4. Tell the user:
    - how to run it: in Resolve, **Workspace › Scripts › Build timeline - <script-title>**. Resolve only scans scripts at startup, so restart it if it was open. Each run writes `resolve/build_log.txt` when Resolve allows file access (Resolve 21.2+ menu scripts have no `io`; then progress shows in Workspace › Console and errors land in `%APPDATA%\Blackmagic Design\DaVinci Resolve\Support\logs\ResolveDebug.txt`). Read those to diagnose problems;

@@ -153,7 +153,7 @@ Write the script in this structure (Markdown):
  
 ... (further sections)
  
-### <timestamp> – Outro & call to action
+### <timestamp> – Outro
 **Narration:** ...
 **Visuals / B-roll:** ...
  
@@ -166,7 +166,8 @@ Writing rules:
 - Write narration for speaking: short sentences, easy to read aloud.
 - Add a retention beat every 30–60 seconds (a question, a surprising detail, a scene change).
 - Estimate timestamps at ~150 words per minute; the total must match the chosen length.
-- Short videos (TikTok/Shorts ≤ 60s): trim to Hook → 2–3 key points → CTA, and drop the thumbnail section.
+- Outro (user preference, default): a question for the comments plus a short sign-off tied to the story (e.g. "See you on the river."). No next-video teaser and no "subscribe" line unless the user asks for one; they have no follow-up video planned.
+- Short videos (TikTok/Shorts ≤ 60s): trim to Hook → 2–3 key points → short outro, and drop the thumbnail section.
 ## Step 4 — Save the file
  
 1. Build `<script-title>` from the video title: lowercase, diacritics removed, spaces replaced with `-`, max ~60 characters.
@@ -180,7 +181,7 @@ Writing rules:
  
 ... (further sections)
  
-### <timestamp> – Outro & call to action
+### <timestamp> – Outro
 **Narration:** ...
 **Visuals / B-roll:** ...
  
@@ -193,7 +194,8 @@ Writing rules:
 - Write narration for speaking: short sentences, easy to read aloud.
 - Add a retention beat every 30–60 seconds (a question, a surprising detail, a scene change).
 - Estimate timestamps at ~150 words per minute; the total must match the chosen length.
-- Short videos (TikTok/Shorts ≤ 60s): trim to Hook → 2–3 key points → CTA, and drop the thumbnail section.
+- Outro (user preference, default): a question for the comments plus a short sign-off tied to the story (e.g. "See you on the river."). No next-video teaser and no "subscribe" line unless the user asks for one; they have no follow-up video planned.
+- Short videos (TikTok/Shorts ≤ 60s): trim to Hook → 2–3 key points → short outro, and drop the thumbnail section.
 ## Step 4 — Save the file
  
 1. Create the `xxx/` folder at the project root if it doesn't exist.
